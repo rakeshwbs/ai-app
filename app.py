@@ -2,19 +2,25 @@ from flask import Flask, request, jsonify
 import json, os
 
 app = Flask(__name__)
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE, "mpg_regression_params.json")) as f:
     P = json.load(f)
-COEF = float(P["coef"][0])      # one feature: weight
+
+COEF = float(P["coef"][0])      # single feature: weight
 INTERCEPT = float(P["intercept"])
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "model": "linear_regression_json"})
 
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
-    w = request.args.get("weight") if request.method == "GET" else (request.get_json(silent=True) or {}).get("weight")
+    if request.method == "GET":
+        w = request.args.get("weight")
+    else:
+        data = request.get_json(silent=True) or {}
+        w = data.get("weight")
     if w is None:
         return jsonify({"error": "Provide weight"}), 400
     try:
